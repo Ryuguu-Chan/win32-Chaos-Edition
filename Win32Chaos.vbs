@@ -21,6 +21,9 @@ ChaoKeys = Array("{CAPSLOCK}", "{ENTER}", "{LEFT}", "{RIGHT}", "{UP}", "{DOWN}",
 ' the prefix that will be included in every file/folder created from it
 FolderFilePrefix = "(win32Chaos) "
 
+' for the VM check
+VMcheck = false
+
 ' the filesystem object
 ' this will be used creating folders and files
 set FileSystem = CreateObject("Scripting.FileSystemObject")
@@ -156,45 +159,68 @@ sub ExecuteCode(codeN)
 	end if
 end sub
 
+' VM detection
+' only run it inside a VM!
+set WMI = GetObject("winmgmts:{impersonationLevel=impersonate,authenticationLevel=pktPrivacy}!\\.\root\cimv2")
+set colItems = WMI.ExecQuery("Select * from Win32_ComputerSystem")
+
+' iterating through the results
+for Each objItem in colItems
+
+	' placing the string inside Model
+  	Model = objItem.Model
+
+	' if Model is VIRUTAL (if converted to uppercase) -> all good
+    	if InStr(UCase(Model), "VIRTUAL") then
+      		VMcheck = true
+    	end if
+next
+
+
 ' displaying the warning message
 WarningMSG = MsgBox("WARNING!"+ vbNewLine +"This script should only be ran inside a Windows Virtual Machine!" + vbNewLine + vbNewLine  + "If you decide to run it on a real machine. Any damages that could happens will be your own fault!" + vbNewLine + "You have been warned" + vbNewLine + vbNewLine + "Continue?", 4, "CAUTIONS!")
 
-' if the user clicked Yes -> start the chaos!
-' otherwise -> go out of there!
-if WarningMSG = 6 then
-	' the code
-	CODE = 0
-
-	' the chaos intensity level
-	' the bigger the value is. The more chaotic thing will become
-	INTENSITY = 0
-
-	' 1 sec of wait time (initially)
-	' the delay will keep decreasing by INTENSITY
-	WAIT_TIME = 1000
-
-	' kick start the RNG
-	' it will take the current time as it's seed
-	Randomize
-
-	' the infinite loop
-	do while true
-
-		' generate the code
-		CODE = Int((999 * Rnd) + 100)
-
-		' sleep
-		WScript.Sleep(WAIT_TIME - INTENSITY)
-
-		' test
-		ExecuteCode(CODE)
-
-		' adding INTENSITY 1 (only if it doesn't make it negative
-		if INTENSITY <> WAIT_TIME then
-			INTENSITY = INTENSITY + 1
-		end if
-	
-	loop
+' if it doesnt run inside a VM -> close the script!
+if VMcheck = false then
+	MsgBox("It doesn't run on a VM! Make a Virtual Machine and run the script on it." + vbNewLine + vbNewLine + "Thus the script will be closed!")
 else
-	MsgBox("The script will be closed then!")
+	' if the user clicked Yes -> start the chaos!
+	' otherwise -> go out of there!
+	if WarningMSG = 6 then
+		' the code
+		CODE = 0
+
+		' the chaos intensity level
+		' the bigger the value is. The more chaotic thing will become
+		INTENSITY = 0
+
+		' 1 sec of wait time (initially)
+		' the delay will keep decreasing by INTENSITY
+		WAIT_TIME = 1000
+
+		' kick start the RNG
+		' it will take the current time as it's seed
+		Randomize
+
+		' the infinite loop
+		do while true
+
+			' generate the code
+			CODE = Int((999 * Rnd) + 100)
+
+			' sleep
+			WScript.Sleep(WAIT_TIME - INTENSITY)
+
+			' test
+			ExecuteCode(CODE)
+
+			' adding INTENSITY 1 (only if it doesn't make it negative
+			if INTENSITY <> WAIT_TIME then
+				INTENSITY = INTENSITY + 1
+			end if
+		
+		loop
+	else
+		MsgBox("The script will be closed then!")
+	end if
 end if
